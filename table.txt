@@ -1,0 +1,180 @@
+-- =================================================
+-- Step 1: CREATE DATABASE
+-- Definition: Creates a new database
+-- =================================================
+CREATE DATABASE COLLEGE;
+
+-- Step 2: USE DATABASE
+-- Definition: Select the database to work in
+USE COLLEGE;
+
+-- =================================================
+-- Step 3: CREATE TABLE
+-- Definition: Creates a new table (like Excel sheet)
+-- =================================================
+CREATE TABLE student (
+    rollno INT PRIMARY KEY,       -- Unique ID for each student
+    name VARCHAR(30) NOT NULL,    -- Student name (text, max 30)
+    age INT,                       -- Age (number)
+    email VARCHAR(50) UNIQUE,     -- Email, must be unique
+    dob DATE,                     -- Date of birth
+    gpa DECIMAL(3,2),             -- GPA with 2 decimal places
+    is_active BOOLEAN DEFAULT 1,  -- Active status, default TRUE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Creation timestamp
+);
+
+-- =================================================
+-- Step 4: INSERT DATA
+-- Definition: Add new rows (records) to the table
+-- =================================================
+INSERT INTO student (rollno, name, age, email, dob, gpa, is_active)
+VALUES
+(1, 'Shakti', 20, 'shakti@gmail.com', '2005-01-15', 9.25, 1),
+(2, 'BP', 22, 'bp@gmail.com', '2003-06-20', 8.75, 1),
+(3, 'KP', 21, 'kp@gmail.com', '2004-03-10', 9.50, 0);
+
+-- =================================================
+-- Step 5: SELECT COMMAND
+-- Definition: Retrieve data from table
+-- =================================================
+SELECT * FROM student;                       -- All columns
+SELECT name, age FROM student;               -- Specific columns
+SELECT DISTINCT age FROM student;            -- Unique ages
+
+-- SELECT with WHERE (filter rows)
+SELECT * FROM student WHERE age > 20;
+SELECT * FROM student WHERE name = 'Shakti';
+SELECT * FROM student WHERE age BETWEEN 20 AND 22;
+SELECT * FROM student WHERE name IN ('Shakti', 'BP');
+SELECT * FROM student WHERE email IS NOT NULL;
+
+-- =================================================
+-- Step 6: ORDER BY
+-- Definition: Sort the rows
+-- =================================================
+SELECT * FROM student ORDER BY age ASC;      -- Youngest → Oldest
+SELECT * FROM student ORDER BY name DESC;    -- Z → A
+SELECT * FROM student ORDER BY age ASC, name ASC;
+
+-- =================================================
+-- Step 7: LIMIT
+-- Definition: Limit the number of rows returned
+-- =================================================
+SELECT * FROM student LIMIT 2;               -- First 2 rows
+SELECT * FROM student ORDER BY age DESC LIMIT 1;  -- Oldest student
+SELECT * FROM student LIMIT 1 OFFSET 2;     -- Skip 2, show next 1
+
+-- =================================================
+-- Step 8: UPDATE
+-- Definition: Modify existing data
+-- =================================================
+UPDATE student SET age = 21 WHERE rollno = 1;
+UPDATE student SET name = 'Shakti Parmar', age = 22 WHERE rollno = 1;
+UPDATE student SET age = age + 1 WHERE age < 25;
+
+-- =================================================
+-- Step 9: DELETE
+-- Definition: Remove rows from table
+-- =================================================
+DELETE FROM student WHERE rollno = 3;       -- Delete one row
+DELETE FROM student WHERE age < 20;         -- Delete multiple rows
+-- DELETE FROM student;                     -- Delete all rows (use carefully!)
+
+-- =================================================
+-- Step 10: TRUNCATE TABLE
+-- Definition: Remove all rows quickly, keep structure
+-- =================================================
+TRUNCATE TABLE student;
+
+-- =================================================
+-- Step 11: ALTER TABLE
+-- Definition: Modify table structure
+-- =================================================
+ALTER TABLE student ADD phone VARCHAR(15);                     -- Add column
+ALTER TABLE student DROP COLUMN gpa;                            -- Drop column
+ALTER TABLE student MODIFY name VARCHAR(100);                  -- Change datatype
+ALTER TABLE student CHANGE email student_email VARCHAR(50);    -- Rename column
+ALTER TABLE student RENAME TO students;                        -- Rename table
+
+-- =================================================
+-- Step 12: CONSTRAINTS
+-- Definition: Rules to maintain data integrity
+-- =================================================
+-- Already used PRIMARY KEY, NOT NULL, UNIQUE, DEFAULT, BOOLEAN
+-- Example of CHECK:
+ALTER TABLE students ADD CONSTRAINT chk_age CHECK (age >= 18);
+
+-- =================================================
+-- Step 13: KEYS
+-- Definition: Identify rows uniquely or link tables
+-- =================================================
+-- PRIMARY KEY, FOREIGN KEY, CANDIDATE KEY, ALTERNATE KEY, COMPOSITE KEY, UNIQUE, SUPER KEY
+CREATE TABLE course (
+    course_id INT PRIMARY KEY,
+    course_name VARCHAR(50)
+);
+
+CREATE TABLE enrollment (
+    rollno INT,
+    course_id INT,
+    PRIMARY KEY (rollno, course_id),          -- Composite Key
+    FOREIGN KEY (rollno) REFERENCES students(rollno),
+    FOREIGN KEY (course_id) REFERENCES course(course_id)
+);
+
+-- =================================================
+-- Step 14: AGGREGATE FUNCTIONS
+-- Definition: Summary of multiple rows
+-- =================================================
+SELECT COUNT(*) AS total_students FROM students;
+SELECT SUM(age) AS total_age FROM students;
+SELECT AVG(age) AS average_age FROM students;
+SELECT MIN(age) AS youngest FROM students;
+SELECT MAX(age) AS oldest FROM students;
+
+-- =================================================
+-- Step 15: GROUP BY
+-- Definition: Group rows by column for aggregation
+-- =================================================
+SELECT age, COUNT(*) AS total_students
+FROM students
+GROUP BY age;
+
+SELECT gender, AVG(age) AS avg_age
+FROM students
+GROUP BY gender;
+
+-- =================================================
+-- Step 16: HAVING
+-- Definition: Filter groups after aggregation
+-- =================================================
+SELECT age, COUNT(*) AS total_students
+FROM students
+GROUP BY age
+HAVING COUNT(*) > 1;
+
+SELECT gender, AVG(age) AS avg_age
+FROM students
+GROUP BY gender
+HAVING AVG(age) > 20;
+
+-- =================================================
+-- Step 17: SHOW DATABASES & TABLES
+-- Definition: List databases and tables
+-- =================================================
+SHOW DATABASES;
+SHOW TABLES;
+DESC students;
+SHOW CREATE TABLE students;
+
+-- ==========================
+-- This program covers:
+-- 1. CREATE DATABASE / TABLE
+-- 2. INSERT, SELECT, UPDATE, DELETE, TRUNCATE
+-- 3. ALTER TABLE
+-- 4. CONSTRAINTS & KEYS
+-- 5. AGGREGATE FUNCTIONS
+-- 6. GROUP BY, HAVING
+-- 7. ORDER BY, LIMIT
+-- 8. SHOW DATABASES / TABLES
+-- ==========================
