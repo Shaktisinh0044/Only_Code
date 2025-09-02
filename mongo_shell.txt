@@ -1,0 +1,118 @@
+# =========================
+# 0) SYSTEM SHELL (OUTSIDE mongosh)
+# =========================
+# Start MongoDB server (if not already running). On Windows, start the "MongoDB" service:
+# (If you installed it as a Windows Service. Otherwise start mongod your usual way.)
+# sc start MongoDB
+
+# Open MongoDB Shell (adjust path if needed; if on PATH just type mongosh)
+# Example for your machine (replace with your actual path if different):
+"C:\Users\sppar\mongosh-2.5.7-win32-x64\mongosh-2.5.7-win32-x64\bin\mongosh.exe"
+
+# =========================
+# 1) INSIDE mongosh — BASIC NAVIGATION
+# =========================
+show dbs                  // list databases
+use mydb                  // switch/create database
+db                        // show current database
+show collections          // list collections in current DB
+
+# =========================
+# 2) CREATE COLLECTION (optional; collections auto-create on first insert)
+# =========================
+db.createCollection("users")
+
+# =========================
+# 3) INSERT (CREATE)
+# =========================
+db.users.insertOne({ name: "Asha", email: "asha@example.com", age: 29, status: "active" })
+db.users.insertMany([
+  { name: "Raj",  email: "raj@example.com",  age: 33, status: "active" },
+  { name: "Sara", email: "sara@example.com", age: 22, status: "pending" }
+])
+
+# =========================
+# 4) QUERY (READ)
+# =========================
+db.users.find()                                              // all docs (first 20 shown; type 'it' to continue)
+db.users.findOne({ email: "asha@example.com" })              // single match
+db.users.find({ age: { $gte: 25, $lte: 35 } })               // range filter
+db.users.find({ name: /^S/ })                                // regex starts-with
+db.users.find(
+  { status: "active" },                                      // filter
+  { _id: 0, name: 1, email: 1 }                              // projection: include fields, hide _id
+).sort({ age: -1 }).limit(5)                                 // sort & limit (pagination: add .skip(n))
+
+# =========================
+# 5) UPDATE
+# =========================
+db.users.updateOne({ email: "asha@example.com" }, { $set: { status: "vip" } })
+db.users.updateMany({ status: "pending" }, { $set: { status: "active" } })
+db.users.updateOne(                                          // upsert (create if not found)
+  { email: "newuser@example.com" },
+  { $set: { name: "New User", status: "active" } },
+  { upsert: true }
+)
+
+# =========================
+# 6) DELETE
+# =========================
+db.users.deleteOne({ email: "sara@example.com" })
+db.users.deleteMany({ status: "inactive" })
+
+# =========================
+# 7) COUNT & SIMPLE PAGINATION
+# =========================
+db.users.countDocuments({ status: "active" })
+db.users.find().skip(10).limit(10)
+
+# =========================
+# 8) INDEXES (PERFORMANCE)
+# =========================
+db.users.createIndex({ email: 1 }, { unique: true })         // unique email
+db.users.getIndexes()                                        // list indexes on the collection
+db.users.dropIndex("email_1")                                // drop a specific index by name
+
+# =========================
+# 9) AGGREGATION (REPORTING/ANALYTICS)
+# =========================
+db.users.aggregate([
+  { $match: { status: "active" } },
+  { $group: { _id: "$status", total: { $sum: 1 }, avgAge: { $avg: "$age" } } },
+  { $sort: { total: -1 } }
+])
+
+# =========================
+# 10) USERS & ROLES (AUTH) — run on the target DB
+# =========================
+use mydb
+db.createUser({
+  user: "appuser",
+  pwd:  "StrongPassword!123",
+  roles: [ { role: "readWrite", db: "mydb" } ]
+})
+// Later, to remove:
+// db.dropUser("appuser")
+
+# =========================
+# 11) DROP (DANGEROUS!)
+# =========================
+# Drop a collection:
+db.users.drop()
+
+# Drop the whole database you are 'using':
+db.dropDatabase()
+
+# =========================
+# 12) EXIT SHELL
+# =========================
+.exit
+
+# =========================
+# 13) BACKUP & RESTORE (SYSTEM SHELL, NOT inside mongosh)
+# =========================
+# Backup one DB to a folder:
+mongodump --db=mydb --out="C:\backups\mydb-YYYYMMDD"
+
+# Restore from that dump:
+mongorestore "C:\backups\mydb-YYYYMMDD"
