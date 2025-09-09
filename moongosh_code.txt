@@ -1,0 +1,159 @@
+// super-simple-crud.js
+// Super-simple Mongoose CRUD demo — step by step.
+// 1) npm install mongoose
+// 2) Make sure MongoDB (mongod) is running locally
+// 3) node super-simple-crud.js
+
+const mongoose = require('mongoose');
+
+async function run() {
+  // STEP 1 - Connect
+  await mongoose.connect('mongodb://127.0.0.1:27017/simple_crud_demo');
+  console.log('STEP 1 ✅ connected');
+
+  // STEP 2 - Schema + Model (simple validations)
+  const userSchema = new mongoose.Schema({
+    name:  { type: String, required: true, minlength: 2 },
+    email: { type: String, required: true, match: /.+\@.+\..+/ },
+    age:   { type: Number, min: 18 }
+  });
+  const User = mongoose.model('User', userSchema);
+  console.log('STEP 2 ✅ schema & model ready');
+
+  // STEP 3 - Clean (start fresh)
+  await User.deleteMany({});
+  console.log('STEP 3 ✅ cleaned demo collection');
+
+  // STEP 4 - CREATE (single) - simple and validates automatically
+  const a = await User.create({ name: 'Shakti', email: 'shakti@example.com', age: 23 });
+  console.log('STEP 4 ✅ created single:', a.name);
+
+  // STEP 5 - CREATE (many) - bulk insert
+  const many = [
+    { name: 'Amit', email: 'amit@example.com', age: 30 },
+    { name: 'Neha', email: 'neha@example.com', age: 28 }
+  ];
+  const inserted = await User.insertMany(many);
+  console.log('STEP 5 ✅ inserted many:', inserted.map(u => u.name).join(', '));
+
+  // STEP 6 - READ (find)
+  const all = await User.find(); // array of docs
+  console.log('STEP 6 ✅ find all count:', all.length);
+
+  const one = await User.findOne({ email: 'shakti@example.com' }); // single doc
+  console.log('STEP 6 ✅ findOne:', one ? one.name : 'not found');
+
+  const byId = await User.findById(one._id); // by _id
+  console.log('STEP 6 ✅ findById email:', byId.email);
+
+  // STEP 7 - UPDATE (runValidators: true enforces schema rules on updates)
+  await User.updateOne({ name: 'Shakti' }, { $set: { age: 24 } }, { runValidators: true });
+  console.log('STEP 7 ✅ updateOne done (age -> 24)');
+
+  const updated = await User.findOneAndUpdate(
+    { email: 'shakti@example.com' },
+    { $set: { age: 25 } },
+    { new: true, runValidators: true } // new:true returns updated doc
+  );
+  console.log('STEP 7 ✅ findOneAndUpdate new age:', updated.age);
+
+  // STEP 8 - DELETE
+  const del = await User.deleteOne({ name: 'Amit' });
+  console.log('STEP 8 ✅ deleteOne removed count:', del.deletedCount);
+
+  // delete by id example (delete Neha)
+  const neha = await User.findOne({ name: 'Neha' });
+  if (neha) {
+    const delById = await User.findByIdAndDelete(neha._id);
+    console.log('STEP 8 ✅ findByIdAndDelete removed:', delById.name);
+  }
+
+  // STEP 9 - Final list and disconnect
+  const remaining = await User.find();
+  console.log('STEP 9 ✅ remaining users:', remaining.map(u => u.name).join(', '));
+
+  await mongoose.disconnect();
+  console.log('DONE ✅ disconnected');
+}
+
+run().catch(err => {
+  console.error('ERROR:', err.message);
+  process.exit(1);
+});
+
+
+/// expample same as upper
+Mongoose CRUD Documentation (Simple Notes)
+
+1. Mongo vs Mongosh
+- mongo → old shell (deprecated, not supported).
+- mongosh → new shell, modern, supports all features. Use this.
+
+2. Connect
+- mongoose.connect("mongodb://127.0.0.1:27017/dbname")
+👉 Connects Node.js app to MongoDB database.
+
+3. Schema
+- Schema = blueprint for how documents will look.
+- Defines fields, types, and rules (validations).
+Example:
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  age: { type: Number, min: 18 }
+});
+
+4. Model
+- Model = collection handler created from schema.
+- Used to perform CRUD operations.
+Example:
+const User = mongoose.model("User", userSchema);
+
+5. Create (Insert)
+- Add documents into collection.
+- Methods:
+  - save() → insert one document.
+  - create() → insert one or multiple.
+  - insertMany() → bulk insert.
+
+6. Read (Find)
+- Get documents from collection.
+- Methods:
+  - find() → returns array of docs.
+  - findOne() → returns first match.
+  - findById(id) → returns document by _id.
+
+7. Update
+- Modify documents in collection.
+- Methods:
+  - updateOne(filter, update, { runValidators:true }) → update first match.
+  - updateMany() → update multiple docs.
+  - findOneAndUpdate(filter, update, { new:true, runValidators:true }) → update and return updated doc.
+  - findByIdAndUpdate(id, update, { new:true, runValidators:true }) → update by ID.
+⚠️ By default updates do NOT validate schema → use { runValidators:true }.
+
+8. Delete
+- Remove documents from collection.
+- Methods:
+  - deleteOne(filter) → delete first match.
+  - deleteMany(filter) → delete all matches.
+  - findOneAndDelete(filter) → delete and return doc.
+  - findByIdAndDelete(id) → delete by ID and return doc.
+
+9. Schema Validations (Common)
+- required: true → must have a value.
+- min / max → number range.
+- minlength / maxlength → string length.
+- enum → only specific values allowed.
+- match → regex pattern (e.g. email).
+- default → default value if not given.
+- unique → makes field unique (creates DB index).
+
+10. Quick Flow
+1. Connect → mongoose.connect()
+2. Schema → define structure
+3. Model → create collection handler
+4. Create → add documents
+5. Read → get documents
+6. Update → change documents (with { runValidators:true })
+7. Delete → remove documents
+8. Disconnect → mongoose.disconnect()
