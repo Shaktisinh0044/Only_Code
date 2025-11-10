@@ -1,0 +1,200 @@
+🧩 What Is Error Handling in Express?
+
+Error handling means catching and managing mistakes that happen in your app — like a missing file, wrong URL, or a crash due to bad code — without breaking the whole server.
+Express gives a special type of middleware for handling errors.
+
+--------------------------------------------------------------------
+🧱 1. Basic Error Handling (Beginner Level)
+const express = require('express');
+const app = express();
+
+// Normal route
+app.get('/', (req, res) => {
+  res.send('Home Page');
+});
+
+// Route with error
+app.get('/error', (req, res) => {
+  throw new Error('Something went wrong!');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Server Error Occurred!');
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+-------------------------------------------------------------------------------------------------------------------------
+🧠 Explanation:
+
+When /error route is visited, it throws an error.
+Express automatically forwards it to the error-handling middleware.
+The middleware has 4 parameters: (err, req, res, next) → always 4.
+It catches the error, logs it, and sends a friendly message instead of crashing the app.
+----------------------------------------------------------------------------------------------------------------------------
+
+2).⚙️ Custom Error Messages in Express.js
+
+Custom error messages mean you decide what message to send when something goes wrong — instead of showing the default “Internal Server Error.”
+It helps you explain clearly what the problem is (for example, “User not found” or “Invalid password”).
+
+const express = require("express");
+const app = express();
+
+// Example route
+app.get("/user/:id", (req, res, next) => {
+  const userId = req.params.id;
+
+  // Example: user not found
+  if (userId !== "10") {
+    const err = new Error("❌ User not found! Please check the ID.");
+    err.status = 404; // custom HTTP status
+    return next(err); // send error to middleware
+  }
+
+  res.send("✅ User found!");
+});
+
+// Custom Error Handler
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Something went wrong!",
+  });
+});
+
+app.listen(3000, () => console.log("Server running on port 3000"));
+
+------------------------------------------------------------------------------------------------------
+🧾 Explanation (Step by Step):
+
+new Error("User not found!") → create a custom message.
+err.status = 404 → give a custom HTTP code.
+next(err) → send this error to your error handler.
+In the error handler, Express automatically sends back your custom message.
+
+------------------------------------------------------------------------------------------------------
+
+
+3)⚙️ Try–Catch Error Handling in Express.js (MAIN)
+
+🧠 Definition (Easy Words):
+The try...catch block is used to catch errors in your code so your app doesn’t crash.
+Code inside try runs normally.
+If an error happens, it jumps to the catch block.
+You can then send a friendly message to the user instead of breaking the app.
+It’s like a safety net — if something fails, you handle it gracefully.
+
+const express = require('express');
+const app = express();
+
+// Middleware to parse JSON
+app.use(express.json());
+
+// 🧩 1️⃣ Normal route with try–catch
+app.get('/user', (req, res) => {
+  try {
+    let users = null;
+    if (!users) throw new Error("No users found");
+    res.send(users);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// ⚙️ 2️⃣ Async route with try–catch (async/await)
+app.get('/data', async (req, res) => {
+  try {
+    // Fake async example
+    const result = await new Promise((resolve, reject) => {
+      setTimeout(() => reject(new Error("Database connection failed")), 500);
+    });
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch data", error: error.message });
+  }
+});
+
+// 🔁 3️⃣ Route with try–catch + next() for global error handling
+app.get('/product', async (req, res, next) => {
+  try {
+    const product = null; // pretend DB result
+    if (!product) throw new Error("Product not found");
+    res.json(product);
+  } catch (err) {
+    next(err); // send to global error handler
+  }
+});
+
+// 🧱 Global Error Handler (must be last)
+app.use((err, req, res, next) => {
+  res.status(500).json({ message: "Something went wrong!", error: err.message });
+});
+
+// Start server
+app.listen(3000, () => console.log('Server running on port 3000'));
+
+
+-------------------------------------------------------------------------------------------------------------------
+You only need these 3 patterns:
+
+Try–Catch in normal routes
+Try–Catch in async/await routes
+Try–Catch + next() for global error handling
+These are enough for 90% of real Express apps.
+------------------------------------------------------------------------------------------------------------------------------
+
+4).⚙️ Centralized Error Handling (Middleware)(MAIN)
+
+
+🧠 Definition (Easy Words)
+
+Centralized Error Handling means — instead of writing try–catch everywhere in your code,
+you make one special middleware that handles all errors from all routes in one place.
+It helps keep your code clean and easy to maintain.
+You just throw or pass the error using next(err) — and this one middleware handles everything.
+
+
+const express = require('express');
+const app = express();
+
+// Middleware to parse JSON
+app.use(express.json());
+
+// 🔹 Example Route 1 — throws error manually
+app.get('/user', (req, res, next) => {
+  try {
+    throw new Error("User not found!");
+  } catch (err) {
+    next(err); // send to centralized error handler
+  }
+});
+
+// 🔹 Example Route 2 — async route (like DB call)
+app.get('/product', async (req, res, next) => {
+  try {
+    const product = null;
+    if (!product) throw new Error("Product does not exist!");
+    res.json(product);
+  } catch (err) {
+    next(err); // also goes to centralized handler
+  }
+});
+
+// 🧱 CENTRALIZED ERROR HANDLER (must be at the end)
+app.use((err, req, res, next) => {
+  console.log("Error caught:", err.message);
+
+  res.status(500).json({
+    success: false,
+    message: err.message || "Something went wrong on the server!"
+  });
+});
+
+// Start server
+app.listen(3000, () => console.log("Server running on port 3000"));
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
